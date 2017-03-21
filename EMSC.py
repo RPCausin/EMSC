@@ -4,14 +4,13 @@ import numpy as np
 import sklearn.decomposition as skl_decomposition
 
 PARAMETERS = np.array([np.logspace(np.log10(0.2e-4), np.log10(2.2e-4), num=10) * 4.0 * np.pi,
-                       np.logspace(4.0 + np.log10(5.0), 5.0 + np.log10(6.0), num=10)])
+                       np.logspace(4.0 + np.log10(5.0e-2), 5.0 + np.log10(6.0e-2), num=10)])
 N_COMPONENTS = 10
 
 # TODO USE ENUMERATE INSTEAD OF FOR I IN RANGE(LEN(#))
 
 
 def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
-    wavenumbers *= 1.0e2
     Z = Z_ref
     alpha_0, gamma = parameters
     Q_ext = np.zeros((len(alpha_0)*len(gamma), len(wavenumbers)))
