@@ -18,7 +18,7 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
     # TODO put everything in functions and well organized
     # TODO reduce the number of for loops using np.sum()
     ns_im = np.divide(Z, wavenumbers)
-    ns_re = np.real(1.0 * scipy.signal.hilbert(ns_im))  # not sure about the -
+    ns_re = np.real(scipy.signal.hilbert(ns_im))  # not sure about the -
     n_index = 0
     for i in range(len(alpha_0)):
         for j in range(len(gamma)):
@@ -27,15 +27,15 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
                 beta = np.arctan(ns_im[k] / (1 / gamma[j] + ns_re[k]))
                 Q_ext[n_index][k] = 2.0 - 4.0 * np.exp(-1.0 * rho * np.tan(beta)) * (np.cos(beta) / rho) * \
                     np.sin(rho - beta) - 4.0 * np.exp(-1.0 * rho * np.tan(beta)) * \
-                    (np.cos(beta) / rho) ** 2 * np.cos(rho - 2 * beta)
+                    (np.cos(beta) / rho) ** 2.0 * np.cos(rho - 2.0 * beta)
                 # TODO reescriure aixo pq entri en una sola linia
             n_index += 1
 
     # orthogonalize Q_ext wrt Z_ref
     for i in range(n_index):
-        Q_ext[i][:] -= np.dot(Q_ext[i][:], Z_ref)
+        Q_ext[i][:] -= np.dot(Q_ext[i][:], Z_ref) / np.linalg.norm(Z_ref) ** 2 * Z_ref
 
-    pca = skl_decomposition.PCA(n_components=N_COMPONENTS)
+    pca = skl_decomposition.IncrementalPCA(n_components=N_COMPONENTS)
     pca.fit(Q_ext)
     p_i = pca.components_
 
@@ -58,7 +58,7 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
 
 def apparent_spectrum_fit_function(i, Z_ref, p_i, b, c, *g_i):
     sum1 = 0
-    if np.shape(g_i) == (1, 10):
+    if np.shape(g_i) == (1, N_COMPONENTS):
         g_i = g_i[0]
     for j in range(len(g_i)):
         sum1 += g_i[j] * p_i[j][i]
