@@ -3,7 +3,7 @@ import scipy.optimize
 import numpy as np
 import sklearn.decomposition as skl_decomposition
 
-PARAMETERS = np.array([np.logspace(np.log10(0.2), np.log10(2.2), num=10) * 4.0 * np.pi,
+PARAMETERS = np.array([np.logspace(np.log10(0.2e-4), np.log10(2.2e-4), num=10) * 4.0 * np.pi,
                        np.logspace(4.0 + np.log10(5.0), 5.0 + np.log10(6.0), num=10)])
 N_COMPONENTS = 10
 
@@ -11,6 +11,7 @@ N_COMPONENTS = 10
 
 
 def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
+    wavenumbers *= 1.0e2
     Z = Z_ref
     alpha_0, gamma = parameters
     Q_ext = np.zeros((len(alpha_0)*len(gamma), len(wavenumbers)))
@@ -38,7 +39,7 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
     pca = skl_decomposition.IncrementalPCA(n_components=N_COMPONENTS)
     pca.fit(Q_ext)
     p_i = pca.components_
-
+    print(p_i)
     def fit_fun(x, bb, cc, *args):
         return apparent_spectrum_fit_function(x, Z_ref, p_i, bb, cc, *args)
 
