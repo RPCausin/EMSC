@@ -48,7 +48,10 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS):
     b, c, g_i = popt[0], popt[1], popt[2:]
     Z_corr = np.zeros(np.shape(Z_ref))
     for i in range(len(wavenumbers)):
-        Z_corr[i] = fit_fun(i, b, c, g_i)
+        sum1 = 0
+        for j in range(len(g_i)):
+            sum1 += g_i[j] * p_i[j][i]
+        Z_corr[i] = (A_app[i] - c - sum1)/b
 
     return Z_corr
 
