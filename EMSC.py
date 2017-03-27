@@ -3,8 +3,11 @@ import scipy.optimize
 import numpy as np
 import sklearn.decomposition as skl_decomposition
 
-PARAMETERS = np.array([np.logspace(np.log10(0.2e-4), np.log10(2.2e-4), num=10) * 4.0 * np.pi,
-                       np.logspace(4.0 + np.log10(5.0e-2), 5.0 + np.log10(6.0e-2), num=10)])
+# PARAMETERS = np.array([np.logspace(np.log10(0.2e-4), np.log10(2.2e-4), num=10) * 4.0 * np.pi,
+#                       np.logspace(4.0 + np.log10(5.0e-2), 5.0 + np.log10(6.0e-2), num=10)])
+
+PARAMETERS = np.array([np.logspace(np.log10(0.1), np.log10(6.0), num=10) * 4.0e-4 * np.pi,
+    np.logspace(np.log10(1e3), np.log10(2e5), num=10)])
 
 # TODO USE ENUMERATE INSTEAD OF FOR I IN RANGE(LEN(#))
 
@@ -18,6 +21,7 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS, fit_
 
     # TODO put everything in functions and well organized
     # TODO reduce the number of for loops using np.sum()
+
     ns_im = np.divide(Z_ref, wavenumbers)
     ns_re = np.real(ifft(fft(np.divide(-1.0, np.pi * wavenumbers)) * fft(ns_im)))
     # Usually im are 1e-22 but this should be checked
@@ -26,12 +30,23 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS, fit_
         for j in range(len(gamma)):
             for k in range(len(A_app)):
                 rho = alpha_0[i] * (1.0 + gamma[j] * ns_re[k]) * wavenumbers[k]
-                beta = np.arctan(ns_im[k] / (1 / gamma[j] + ns_re[k]))
-                Q_ext[n_index][k] = 2.0 - 4.0 * np.exp(-1.0 * rho * np.tan(beta)) * (np.cos(beta) / rho) * \
-                    np.sin(rho - beta) - 4.0 * np.exp(-1.0 * rho * np.tan(beta)) * \
-                    (np.cos(beta) / rho) ** 2.0 * np.cos(rho - 2.0 * beta) + \
-                    4 * (np.cos(beta) / rho) ** 2 * np.cos(2 * beta)
+#                beta = np.arctan(ns_im[k] / (1 / gamma[j] + ns_re[k]))
+#                Q_ext[n_index][k] = 2.0 - 4.0 * np.exp(-1.0 * rho * np.tan(beta)) * (np.cos(beta) / rho) * \
+#                    np.sin(rho - beta) - 4.0 * np.exp(-1.0 * rho * np.tan(beta)) * \
+#                    (np.cos(beta) / rho) ** 2.0 * np.cos(rho - 2.0 * beta) + \
+#                    4 * (np.cos(beta) / rho) ** 2 * np.cos(2 * beta)
                 # TODO reescriure aixo pq entri en una sola linia
+                
+                tanB = ns_im[k] / (1 / gamma[j] + ns_re[k])
+                cosB = np.sqrt(1 / (1 + tanB ** 2))
+                sinB = np.sqrt(1 - cosB ** 2)
+                sinrmB = np.sin(rho) * cosB - sinB * np.cos(rho)
+                cos2B = cosB ** 2 - sinB ** 2
+                sin2B = 2.0 * sinB * cosB
+                cosrm2B = np.cos(rho) * cos2B + np.sin(rho) * sin2B
+                Q_ext[n_index][k] = 2.0 - 4.0 * np.exp(-1.0 * rho * tanB) * (cosB / rho) * sinrmB - \
+                    4.0 * np.exp(-1.0 * rho * tanB) * (cosB / rho) ** 2 * cosrm2B + 4.0 * (cosB / rho) ** 2 * cos2B
+                
             n_index += 1
 
     # orthogonalize Q_ext wrt Z_ref
@@ -41,6 +56,7 @@ def scattering_correction(A_app, Z_ref, wavenumbers, parameters=PARAMETERS, fit_
     pca = skl_decomposition.IncrementalPCA(n_components=N_COMPONENTS)
     pca.fit(Q_ext)
     p_i = pca.components_
+    print(np.sum(pca.explained_variance_ratio_)*100)
 
     def fit_fun(x, bb, cc, *args):
         return apparent_spectrum_fit_function(x, Z_ref, p_i, bb, cc, N_COMPONENTS, *args)
